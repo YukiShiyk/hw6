@@ -1,0 +1,214 @@
+1、高斯噪声
+
+import cv2
+import numpy as np
+import random
+import tkinter
+import math
+import matplotlib.pyplot as plt
+
+def rgb2gray(rgb):
+    gray = np.zeros((rgb.shape[0],rgb.shape[1],1),np.uint8)  # 创建图像变量，防止gray的改变导致如果把原图的改变
+    for i in range(rgb.shape[0]):
+        for j in range(rgb.shape[1]):
+            gray[i,j] = 0.299 * rgb[i, j, 0] + 0.587 * rgb[i, j, 1] + 0.114 * rgb[i, j, 2]
+    return gray
+
+def Gauss_random(mu,sigem):  #  X是随机变量，mu是均值，sigema是方差
+    x = random.uniform(mu,sigem*sigem)
+    t1 = (x-mu)*(x-mu)
+    t2 = 2*sigem*sigem
+    t3 = math.exp(-(t1/t2))
+    t4 = sigem*math.sqrt(2*math.pi)
+    f = 1/t4 * t3
+    return f
+
+def Gauss(gray,m,s,k):  #高斯噪声就是噪声是按照高斯分布，分布在图像上的，是黑色的
+    gauss_p = gray*1
+    for i in range(gauss_p.shape[0]):
+        for j in range(gauss_p.shape[1]):
+            temp = gauss_p[i,j] + Gauss_random(m,s)*k
+            if temp < 0:
+                temp = 0
+            elif temp > 255:
+                temp = 255
+            gauss_p[i,j] = temp
+    return gauss_p
+
+# def Salt(gray):
+#     salt_p = gray*1
+#     for i in range(6000):
+#         addx = random.randint(0, salt_p.shape[0] - 1)      #产生随机整数  用于确定X和Y的位置，即像素的位置
+#         addy = random.randint(0, salt_p.shape[1] - 1)
+#         if random.randint(0,1) == 0 :
+#             salt_p[addx,addy] = 0
+#         else:
+#             salt_p[addx,addy] = 255
+#     return salt_p
+
+def Img(m,s,k):
+    m=int(m)
+    s=int(s)
+    k = int(k)
+    img = cv2.imread("lena.bmp")
+    gray = rgb2gray(img)
+    print(gray.shape[0],gray.shape[1])
+    # salt = Salt(gray)
+    gauss = Gauss(gray,m,s,k)
+    img_mean = cv2.blur(gauss, (5, 5))
+    img_median = cv2.medianBlur(gauss, 5)
+    img_Guassian = cv2.GaussianBlur(gauss, (5, 5), 0)
+    img_bilater = cv2.bilateralFilter(gauss, 9, 75, 75)
+    cv2.imshow("gray",gray)
+    cv2.imshow("gauss",gauss)
+    cv2.imshow("img_mean",img_mean)
+    cv2.imshow("MedianBlur",img_median)
+    cv2.imshow("img_Guassian",img_Guassian)
+    cv2.imshow("img_bilater",img_bilater)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    titles = ['OriImg', 'GauImg', 'Mean', 'Gaussian', 'Median', 'Bilateral']
+    imgs = [gray, gauss, img_mean, img_Guassian, img_median, img_bilater]
+    for i in range(6):
+        plt.subplot(3, 2, i + 1)  # 注意，这和matlab中类似，没有0，数组下标从1开始
+        plt.imshow(imgs[i])
+        plt.title(titles[i])
+    plt.show()
+
+
+
+def blur(image):
+    img_mean = cv2.blur(image, (5, 5))
+    img_Guassian = cv2.GaussianBlur(image, (5, 5), 0)
+    img_median = cv2.medianBlur(image, 5)
+    img_bilater = cv2.bilateralFilter(image, 9, 75, 75)
+    titles = ['GauImg', 'Mean', 'Gaussian', 'Median', 'Bilateral']
+    imgs = [image, img_mean, img_Guassian, img_median, img_bilater]
+    for i in range(6):
+        plt.subplot(3, 2, i + 1)  # 注意，这和matlab中类似，没有0，数组下标从1开始
+        plt.imshow(imgs[i])
+        plt.title(titles[i])
+    plt.show()
+
+def input():
+    mu = enterS1.get()
+    sigem = enterS2.get()
+    k = enterS3.get()
+    Img(mu,sigem,k)
+
+
+root = tkinter.Tk()
+s1 = tkinter.StringVar(value='')
+s2 = tkinter.StringVar(value='')
+s3 = tkinter.StringVar(value='')
+
+labelS1 = tkinter.Label(root,text = 'μ:',justify = tkinter.RIGHT,width = 80)
+labelS1.place(x = 10,y = 5,width = 80,height = 20)
+
+enterS1 = tkinter.Entry(root,width = 80,textvariable = s1)
+enterS1.place(x = 100,y = 5,width = 80,height = 20)
+
+labelS2 = tkinter.Label(root,text = 'σ:',justify = tkinter.RIGHT,width = 80)
+labelS2.place(x = 10,y = 30,width = 80,height = 20)
+
+enterS2 = tkinter.Entry(root,width = 80,textvariable = s2)
+enterS2.place(x = 100,y =30 ,width = 80,height = 20)
+
+labelS3 = tkinter.Label(root,text = 'k :',justify = tkinter.RIGHT,width = 80)
+labelS3.place(x = 10,y = 55,width = 80,height = 20)
+
+enterS3 = tkinter.Entry(root,width = 80,textvariable = s3)
+enterS3.place(x = 100,y = 55,width = 80,height = 20)
+
+buttonOK = tkinter.Button(root,text = '确定',command = input)
+buttonOK.place(x=90,y=90,width = 50,height = 30)
+
+root.mainloop()
+
+
+2、椒盐噪声
+
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+def saltpepper(img, n):
+    m = int((img.shape[0] * img.shape[1]) * n)
+    for a in range(m):
+        i = int(np.random.random() * img.shape[1])
+        j = int(np.random.random() * img.shape[0])
+        if img.ndim == 2:
+            img[j, i] = 255
+        elif img.ndim == 3:
+            img[j, i, 0] = 255
+            img[j, i, 1] = 255
+            img[j, i, 2] = 255
+    for b in range(m):
+        i = int(np.random.random() * img.shape[1])
+        j = int(np.random.random() * img.shape[0])
+        if img.ndim == 2:
+            img[j, i] = 0
+        elif img.ndim == 3:
+            img[j, i, 0] = 0
+            img[j, i, 1] = 0
+            img[j, i, 2] = 0
+    return img
+    # cv2.imwrite("C:/Users/Administrator/Desktop/image\\SaltImage.jpg", img)
+
+
+img = cv2.imread('lena.bmp')
+img1 = cv2.imread('lena.bmp')
+#cv2.imshow('Original image',img)
+# cv2.imwrite("C:/Users/Administrator/Desktop/image\\Original.jpg", img)
+saltImage = saltpepper(img, 0.2)
+#cv2.imshow('saltImage', saltImage)
+img_mean = cv2.blur(saltImage, (5,5))
+img_Guassian = cv2.GaussianBlur(saltImage,(5,5),0)
+img_median = cv2.medianBlur(saltImage, 5)
+img_bilater = cv2.bilateralFilter(saltImage,9,75,75)
+titles = ['OriImg','SaltImg','Mean', 'Gaussian', 'Median', 'Bilateral']
+imgs = [img1 ,saltImage, img_mean, img_Guassian, img_median, img_bilater]
+for i in range(6):
+    plt.subplot(3,2,i+1)#注意，这和matlab中类似，没有0，数组下标从1开始
+    plt.imshow(imgs[i])
+    plt.title(titles[i])
+plt.show()
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+3、维纳滤波器
+
+close all;
+clear all;
+clc;
+I = im2double(imread('lena.bmp'));
+[hei,wid,~] = size(I);
+subplot(2,2,1),imshow(I);
+title('原图像');
+% 模拟运动模糊.
+LEN = 50;
+THETA = 45;
+PSF = fspecial('motion', LEN, THETA);%产生运动模糊算子，即点扩展函数
+blurred = imfilter(I, PSF, 'conv', 'circular');
+subplot(2,2,2), imshow(blurred); title('模糊图像');
+Pf = psf2otf(PSF,[hei,wid]);%退化函数的FFT
+% 添加加性噪声
+noise_mean = 0;
+noise_var = 0.00001;
+blurred_noisy = imnoise(blurred, 'gaussian',noise_mean, noise_var);
+subplot(2,2,3), imshow(blurred_noisy)
+title('带运动模糊和噪声图像')
+p = [0 -1 0;-1 4 -1;0 -1 0];%拉普拉斯模板
+P = psf2otf(p,[hei,wid]);
+gama = 0.001;
+If = fft2(blurred_noisy);
+numerator = conj(Pf);%conj函数，用于求一个复数的复共轭
+denominator = Pf.^2 + gama*(P.^2);
+deblurred2 = ifft2( numerator.*If./ denominator );%约束最小二乘方滤波在频率域中的表达式
+subplot(2,2,4), imshow(deblurred2)
+title('约束最小二乘方滤波后图像');
+
+
+
+
